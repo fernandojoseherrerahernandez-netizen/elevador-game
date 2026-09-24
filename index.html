@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Juego de Memoria - Elevador de Polea Automatizado</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Iconos FontAwesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Fuentes Google: Orbitron (Tech/Neon) y Rajdhani -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 60%, #030712 100%);
+      color: #f8fafc;
+      user-select: none;
+      -webkit-user-select: none;
+      min-height: 100vh;
+    }
+
+    .font-tech {
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    /* Animación de volteo 3D para tarjetas */
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 1.25rem;
+    }
+
+    .card-front {
+      transform: rotateY(180deg);
+    }
+
+    .card-back {
+      transform: rotateY(0deg);
+    }
+
+    /* Resplandor Neón deslumbrante */
+    .glow-neon-magenta {
+      box-shadow: 0 0 25px rgba(236, 72, 153, 0.7), inset 0 0 15px rgba(236, 72, 153, 0.3);
+    }
+
+    .glow-neon-cyan {
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.7), inset 0 0 15px rgba(6, 182, 212, 0.3);
+    }
+
+    .glow-neon-gold {
+      box-shadow: 0 0 30px rgba(245, 158, 11, 0.8), inset 0 0 15px rgba(245, 158, 11, 0.4);
+    }
+
+    .glow-red {
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.8);
+    }
+
+    .card-glow-hover:hover {
+      box-shadow: 0 0 22px rgba(244, 114, 182, 0.6);
+      transform: translateY(-4px) scale(1.02);
+    }
+
+    @keyframes pulseHeart {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.25); filter: drop-shadow(0 0 8px #f43f5e); }
+    }
+
+    .animate-heart {
+      animation: pulseHeart 1.2s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.8)); }
+      50% { filter: drop-shadow(0 0 25px rgba(236, 72, 153, 0.9)); }
+    }
+
+    .animate-pulse-glow {
+      animation: pulseGlow 2.5s ease-in-out infinite;
+    }
+
+    /* Fondo de rejilla cibernética */
+    .bg-grid-pattern {
+      background-size: 36px 36px;
+      background-image: 
+        linear-gradient(to right, rgba(168, 85, 247, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(6, 182, 212, 0.08) 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body class="bg-grid-pattern flex flex-col items-center justify-center p-3 sm:p-6 min-h-screen">
+
+  <!-- Canvas para animación de confeti -->
+  <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 hidden"></canvas>
+
+  <div class="w-full max-w-5xl flex flex-col items-center justify-center my-auto">
+
+    <!-- ==================== PANTALLA 1: INICIO ==================== -->
+    <div id="screen-start" class="flex flex-col items-center text-center w-full max-w-2xl bg-slate-900/90 border-2 border-fuchsia-500/50 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-xl glow-neon-magenta">
+      
+      <!-- Logo o Icono animado -->
+      <div class="w-24 h-24 sm:w-32 sm:h-32 bg-slate-950 border-4 border-cyan-400 rounded-full flex items-center justify-center mb-6 shadow-2xl animate-pulse-glow">
+        <i class="fa-solid fa-elevator text-cyan-400 text-5xl sm:text-6xl animate-bounce"></i>
+      </div>
+
+      <!-- TÍTULO EN GIANTE PEDIDO -->
+      <h1 class="text-3xl sm:text-5xl md:text-6xl font-black font-tech uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-amber-300 drop-shadow-lg mb-4">
+        ELEVADOR DE POLEA AUTOMATIZADO
+      </h1>
+
+      <p class="text-slate-300 text-base sm:text-xl font-medium max-w-lg mb-8 leading-relaxed">
+        ¡Demuestra tu memoria visual! Encuentra las <span class="text-cyan-400 font-bold">5 parejas</span> correspondientes a las partes mecánicas y eléctricas de este elevador.
+      </p>
+
+      <!-- BOTÓN PLAY NOW EN GRANDE ABAJO -->
+      <button onclick="startGame()" class="w-full max-w-md py-5 px-8 rounded-2xl bg-gradient-to-r from-fuchsia-600 via-pink-500 to-amber-500 hover:from-fuchsia-500 hover:to-amber-400 text-white font-tech text-2xl sm:text-3xl font-black tracking-widest uppercase shadow-2xl transform transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-4 glow-neon-gold border-2 border-amber-300/60">
+        <i class="fa-solid fa-play text-amber-200"></i>
+        <span>PLAY NOW!</span>
+      </button>
+
+    </div>
+
+    <!-- ==================== PANTALLA 2: JUEGO ==================== -->
+    <div id="screen-game" class="hidden w-full max-w-4xl flex-col items-center">
+      
+      <!-- Barra superior de Puntos, Música, Parejas (0/5) y Vidas (3 corazones) -->
+      <div class="w-full bg-slate-900/90 border-2 border-fuchsia-500/40 rounded-2xl p-3 sm:p-4 mb-6 shadow-2xl flex flex-wrap justify-between items-center gap-3 backdrop-blur-xl">
+        
+        <!-- Contador de Puntos -->
+        <div class="flex items-center space-x-2 sm:space-x-3 bg-slate-950/90 px-3 sm:px-4 py-2 rounded-xl border border-amber-500/40 glow-neon-gold">
+          <i class="fa-solid fa-trophy text-amber-400 text-lg sm:text-2xl animate-bounce"></i>
+          <div>
+            <div class="text-[9px] sm:text-xs text-amber-300 font-bold uppercase tracking-wider font-tech">PUNTOS</div>
+            <div id="score-display" class="text-lg sm:text-2xl font-black font-tech text-amber-400">0</div>
+          </div>
+        </div>
+
+        <!-- Botón de Control de Música -->
+        <button id="music-btn" onclick="toggleMusic()" class="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 px-3 sm:px-4 py-2 rounded-xl border border-pink-400/50 shadow-lg cursor-pointer transition-all active:scale-95 text-white font-tech text-xs sm:text-sm">
+          <i id="music-icon" class="fa-solid fa-music text-pink-200"></i>
+          <span id="music-text" class="font-bold">MÚSICA: OFF</span>
+        </button>
+
+        <!-- Contador de Parejas (0/5) -->
+        <div class="flex items-center space-x-2 sm:space-x-3 bg-slate-950/90 px-3 sm:px-4 py-2 rounded-xl border border-cyan-500/40 glow-neon-cyan">
+          <i class="fa-solid fa-cubes text-cyan-400 text-lg sm:text-xl"></i>
+          <div>
+            <div class="text-[9px] sm:text-xs text-cyan-300 font-bold uppercase font-tech">PAREJAS</div>
+            <div id="pairs-display" class="text-lg sm:text-2xl font-black font-tech text-cyan-300">0 / 5</div>
+          </div>
+        </div>
+
+        <!-- Barra con 3 Corazones (Vidas) -->
+        <div class="flex items-center space-x-2 sm:space-x-3 bg-slate-950/90 px-3 sm:px-4 py-2 rounded-xl border border-rose-500/40 glow-red">
+          <div class="text-[9px] sm:text-xs text-rose-300 font-bold uppercase tracking-wider font-tech mr-1">VIDAS</div>
+          <div id="hearts-container" class="flex space-x-1.5 sm:space-x-2 text-xl sm:text-2xl text-rose-500">
+            <i class="fa-solid fa-heart animate-heart"></i>
+            <i class="fa-solid fa-heart animate-heart"></i>
+            <i class="fa-solid fa-heart animate-heart"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tablero del juego: 10 tarjetas (5 parejas) organizadas en 3 líneas/filas -->
+      <div id="game-board" class="w-full flex flex-wrap justify-center gap-3 sm:gap-4 mb-4">
+        <!-- Generado dinámicamente -->
+      </div>
+
+    </div>
+
+    <!-- ==================== PANTALLA 3: RESULTADOS (GAME OVER / YOU WIN) ==================== -->
+    <div id="screen-end" class="hidden flex-col items-center text-center w-full max-w-xl bg-slate-900/95 border-4 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-xl transition-all duration-500 my-auto">
+      
+      <!-- Icono Result -->
+      <div id="end-icon" class="mb-4"></div>
+
+      <!-- Título Gigante You Win / Game Over -->
+      <h2 id="end-title" class="text-4xl sm:text-6xl font-black font-tech mb-3 tracking-wider"></h2>
+      
+      <p id="end-message" class="text-slate-300 text-base sm:text-lg mb-6 max-w-md"></p>
+
+      <!-- Puntuación Final -->
+      <div class="bg-slate-950 px-6 py-3 rounded-2xl border border-amber-500/50 mb-8 inline-flex items-center gap-3 shadow-inner">
+        <i class="fa-solid fa-trophy text-amber-400 text-2xl"></i>
+        <span class="text-sm font-tech text-slate-400 uppercase">PUNTAJE FINAL:</span>
+        <span id="final-score" class="text-3xl font-black font-tech text-amber-400">0</span>
+      </div>
+
+      <!-- ÚNICO BOTÓN: Volver al Inicio -->
+      <div class="flex justify-center w-full max-w-md">
+        <button onclick="showStartScreen()" class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-white font-tech text-xl font-bold uppercase tracking-wider shadow-lg transform transition-all active:scale-95 cursor-pointer border border-slate-500/40 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-house"></i>
+          <span>Volver al Inicio</span>
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // 5 Componentes súper llamativos con arte vectorial neón
+    const ELEVATOR_PARTS = [
+      {
+        id: 'polea',
+        name: 'Polea de Tracción',
+        desc: 'Transmite el movimiento del motor al cable por fricción.',
+        badgeColor: 'bg-amber-500/30 text-amber-200 border-amber-400/80',
+        borderColor: 'border-amber-400 shadow-amber-500/50',
+        svgImage: `
+          <svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_0_12px_rgba(245,158,11,0.8)]">
+            <defs>
+              <radialGradient id="grad-polea" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#fef08a" />
+                <stop offset="50%" stop-color="#f59e0b" />
+                <stop offset="100%" stop-color="#78350f" />
+              </radialGradient>
+            </defs>
+            <circle cx="50" cy="50" r="44" fill="#090d16" stroke="url(#grad-polea)" stroke-width="6"/>
+            <circle cx="50" cy="50" r="32" fill="#1e1b4b" stroke="#fef08a" stroke-width="3" stroke-dasharray="10 5"/>
+            <circle cx="50" cy="50" r="16" fill="url(#grad-polea)"/>
+            <circle cx="50" cy="50" r="7" fill="#ffffff"/>
+            <line x1="50" y1="6" x2="50" y2="94" stroke="#fbbf24" stroke-width="4"/>
+            <line x1="6" y1="50" x2="94" y2="50" stroke="#fbbf24" stroke-width="4"/>
+            <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+            <polygon points="90,45 98,50 90,55" fill="#38bdf8"/>
+          </svg>`
+      },
+      {
+        id: 'motor',
+        name: 'Motor Eléctrico',
+        desc: 'Proporciona la fuerza mecánica para mover el sistema.',
+        badgeColor: 'bg-fuchsia-500/30 text-fuchsia-200 border-fuchsia-400/80',
+        borderColor: 'border-fuchsia-400 shadow-fuchsia-500/50',
+        svgImage: `
+          <svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_0_12px_rgba(236,72,153,0.8)]">
+            <defs>
+              <linearGradient id="grad-motor" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f472b6" />
+                <stop offset="100%" stop-color="#a855f7" />
+              </linearGradient>
+            </defs>
+            <rect x="20" y="26" width="60" height="48" rx="10" fill="#0f172a" stroke="url(#grad-motor)" stroke-width="5"/>
+            <line x1="30" y1="26" x2="30" y2="74" stroke="#ec4899" stroke-width="3"/>
+            <line x1="42" y1="26" x2="42" y2="74" stroke="#ec4899" stroke-width="3"/>
+            <line x1="54" y1="26" x2="54" y2="74" stroke="#ec4899" stroke-width="3"/>
+            <line x1="66" y1="26" x2="66" y2="74" stroke="#ec4899" stroke-width="3"/>
+            <rect x="80" y="42" width="15" height="16" rx="3" fill="#fbbf24"/>
+            <polygon points="46,6 58,6 50,18 60,18 40,32 46,20 38,20" fill="#facc15"/>
+          </svg>`
+      },
+      {
+        id: 'cabina',
+        name: 'Cabina Elevadora',
+        desc: 'Espacio seguro que transporta a los usuarios entre pisos.',
+        badgeColor: 'bg-cyan-500/30 text-cyan-200 border-cyan-400/80',
+        borderColor: 'border-cyan-400 shadow-cyan-500/50',
+        svgImage: `
+          <svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_0_12px_rgba(6,182,212,0.8)]">
+            <rect x="18" y="14" width="64" height="74" rx="8" fill="#090d16" stroke="#06b6d4" stroke-width="5"/>
+            <rect x="25" y="22" width="50" height="60" rx="4" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+            <rect x="29" y="26" width="20" height="52" fill="#06b6d4" fill-opacity="0.3" stroke="#67e8f9" stroke-width="2"/>
+            <rect x="51" y="26" width="20" height="52" fill="#06b6d4" fill-opacity="0.3" stroke="#67e8f9" stroke-width="2"/>
+            <circle cx="50" cy="18" r="4" fill="#22c55e" class="animate-ping"/>
+            <line x1="50" y1="0" x2="50" y2="14" stroke="#f8fafc" stroke-width="4"/>
+          </svg>`
+      },
+      {
+        id: 'contrapeso',
+        name: 'Contrapeso',
+        desc: 'Equilibra el peso de la cabina optimizando la energía.',
+        badgeColor: 'bg-purple-500/30 text-purple-200 border-purple-400/80',
+        borderColor: 'border-purple-400 shadow-purple-500/50',
+        svgImage: `
+          <svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_0_12px_rgba(168,85,247,0.8)]">
+            <rect x="24" y="12" width="52" height="76" rx="6" fill="#0f172a" stroke="#a855f7" stroke-width="5"/>
+            <rect x="29" y="18" width="42" height="12" rx="3" fill="#c084fc"/>
+            <rect x="29" y="34" width="42" height="12" rx="3" fill="#a855f7"/>
+            <rect x="29" y="50" width="42" height="12" rx="3" fill="#7e22ce"/>
+            <rect x="29" y="66" width="42" height="12" rx="3" fill="#581c87"/>
+            <line x1="50" y1="0" x2="50" y2="12" stroke="#e2e8f0" stroke-width="4"/>
+          </svg>`
+      },
+      {
+        id: 'plc',
+        name: 'Cuadro PLC Control',
+        desc: 'Procesa llamadas de piso y automatiza los movimientos.',
+        badgeColor: 'bg-emerald-500/30 text-emerald-200 border-emerald-400/80',
+        borderColor: 'border-emerald-400 shadow-emerald-500/50',
+        svgImage: `
+          <svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_0_12px_rgba(16,185,129,0.8)]">
+            <rect x="15" y="15" width="70" height="70" rx="8" fill="#022c22" stroke="#10b981" stroke-width="5"/>
+            <rect x="22" y="22" width="56" height="24" rx="4" fill="#0f172a" stroke="#34d399" stroke-width="2"/>
+            <text x="50" y="38" font-family="Orbitron" font-size="10" fill="#34d399" text-anchor="middle" font-weight="900">PLC ACTIVE</text>
+            <circle cx="28" cy="58" r="5" fill="#ef4444"/>
+            <circle cx="43" cy="58" r="5" fill="#f59e0b"/>
+            <circle cx="58" cy="58" r="5" fill="#10b981"/>
+            <circle cx="72" cy="58" r="5" fill="#3b82f6"/>
+            <line x1="25" y1="72" x2="75" y2="72" stroke="#34d399" stroke-width="4" stroke-dasharray="6 3"/>
+          </svg>`
+      }
+    ];
+
+    let cards = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let score = 0;
+    let lives = 3;
+    let isLockBoard = false;
+
+    /* Web Audio API para efectos de sonido y música */
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    let isMusicPlaying = false;
+    let musicInterval = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new AudioContext();
+      }
+    }
+
+    function toggleMusic() {
+      initAudio();
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const musicBtn = document.getElementById('music-btn');
+      const musicText = document.getElementById('music-text');
+      const musicIcon = document.getElementById('music-icon');
+
+      if (isMusicPlaying) {
+        stopBackgroundMusic();
+        musicText.innerText = "MÚSICA: OFF";
+        musicIcon.className = "fa-solid fa-music text-pink-200";
+        musicBtn.classList.remove('glow-neon-magenta');
+      } else {
+        startBackgroundMusic();
+        musicText.innerText = "MÚSICA: ON";
+        musicIcon.className = "fa-solid fa-compact-disc text-pink-300 animate-spin";
+        musicBtn.classList.add('glow-neon-magenta');
+      }
+    }
+
+    function startBackgroundMusic() {
+      isMusicPlaying = true;
+      let noteIndex = 0;
+      const melody = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 293.66, 349.23, 440.00, 587.33, 440.00, 349.23];
+
+      musicInterval = setInterval(() => {
+        if (!isMusicPlaying || !audioCtx) return;
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(melody[noteIndex], audioCtx.currentTime);
+          
+          gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.22);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.22);
+
+          noteIndex = (noteIndex + 1) % melody.length;
+        } catch (e) {}
+      }, 250);
+    }
+
+    function stopBackgroundMusic() {
+      isMusicPlaying = false;
+      if (musicInterval) {
+        clearInterval(musicInterval);
+        musicInterval = null;
+      }
+    }
+
+    function playSound(type) {
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'flip') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(350, now);
+          osc.frequency.exponentialRampToValueAtTime(600, now + 0.09);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.09);
+          osc.start(now);
+          osc.stop(now + 0.09);
+        } 
+        else if (type === 'match') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.08);
+          osc.frequency.setValueAtTime(783.99, now + 0.16);
+          osc.frequency.setValueAtTime(1046.50, now + 0.24);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        } 
+        else if (type === 'error') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(240, now);
+          osc.frequency.setValueAtTime(150, now + 0.12);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        }
+        else if (type === 'win') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.15);
+          osc.frequency.setValueAtTime(783.99, now + 0.3);
+          osc.frequency.setValueAtTime(1046.50, now + 0.45);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.7);
+          osc.start(now);
+          osc.stop(now + 0.7);
+        }
+        else if (type === 'lose') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.linearRampToValueAtTime(80, now + 0.6);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.6);
+          osc.start(now);
+          osc.stop(now + 0.6);
+        }
+      } catch (e) {}
+    }
+
+    function showStartScreen() {
+      stopConfetti();
+      document.getElementById('screen-start').classList.remove('hidden');
+      document.getElementById('screen-start').classList.add('flex');
+
+      document.getElementById('screen-game').classList.add('hidden');
+      document.getElementById('screen-game').classList.remove('flex');
+
+      document.getElementById('screen-end').classList.add('hidden');
+      document.getElementById('screen-end').classList.remove('flex');
+    }
+
+    function startGame() {
+      initAudio();
+
+      score = 0;
+      lives = 3;
+      matchedPairs = 0;
+      flippedCards = [];
+      isLockBoard = false;
+
+      updateUI();
+
+      document.getElementById('screen-start').classList.add('hidden');
+      document.getElementById('screen-start').classList.remove('flex');
+
+      document.getElementById('screen-end').classList.add('hidden');
+      document.getElementById('screen-end').classList.remove('flex');
+
+      document.getElementById('screen-game').classList.remove('hidden');
+      document.getElementById('screen-game').classList.add('flex');
+
+      buildBoard();
+    }
+
+    function buildBoard() {
+      const board = document.getElementById('game-board');
+      board.innerHTML = '';
+
+      cards = [];
+      ELEVATOR_PARTS.forEach(part => {
+        // Tarjeta 1: Imagen del Componente
+        cards.push({
+          pairId: part.id,
+          type: 'image',
+          title: part.name,
+          sub: 'COMPONENTE',
+          svgImage: part.svgImage,
+          badgeColor: part.badgeColor,
+          borderColor: part.borderColor
+        });
+
+        // Tarjeta 2: Descripción Técnica de la Función
+        cards.push({
+          pairId: part.id,
+          type: 'desc',
+          title: part.desc,
+          sub: `FUNCIÓN: ${part.name.toUpperCase()}`,
+          svgImage: part.svgImage,
+          badgeColor: part.badgeColor,
+          borderColor: part.borderColor
+        });
+      });
+
+      // Mezclar aleatoriamente las 10 tarjetas
+      cards.sort(() => Math.random() - 0.5);
+
+      // Renderizar 10 tarjetas (dispuestas en 3 líneas/filas)
+      cards.forEach((cardData) => {
+        const cardElem = document.createElement('div');
+        // Usamos anchos relativos para que sean 4 + 4 + 2 en pantallas anchas (3 filas)
+        cardElem.className = 'card perspective-1000 h-44 sm:h-52 w-[calc(50%-0.5rem)] sm:w-[calc(25%-0.75rem)] cursor-pointer card-glow-hover';
+        cardElem.dataset.pairId = cardData.pairId;
+
+        if (cardData.type === 'image') {
+          cardElem.innerHTML = `
+            <div class="card-inner">
+              <div class="card-back bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 border-2 border-fuchsia-500/60 flex flex-col items-center justify-center p-3 shadow-2xl rounded-2xl glow-neon-magenta">
+                <div class="w-12 h-12 rounded-full bg-slate-950 border-2 border-fuchsia-400 flex items-center justify-center mb-2 shadow-lg animate-pulse-glow">
+                  <i class="fa-solid fa-elevator text-fuchsia-400 text-2xl"></i>
+                </div>
+                <span class="text-[10px] font-tech text-fuchsia-300 tracking-widest uppercase font-bold">ELEVADOR</span>
+                <span class="text-[9px] font-tech text-cyan-400 mt-1 font-extrabold animate-bounce">¡TOCA AQUÍ!</span>
+              </div>
+
+              <div class="card-front bg-slate-950/95 border-2 ${cardData.borderColor} flex flex-col justify-between p-2.5 sm:p-3 rounded-2xl shadow-2xl backdrop-blur-md">
+                <div class="flex justify-between items-center w-full">
+                  <span class="text-[8px] sm:text-[9px] font-tech font-extrabold uppercase px-2 py-0.5 rounded-full border ${cardData.badgeColor}">
+                    ${cardData.sub}
+                  </span>
+                  <i class="fa-solid fa-star text-amber-400 text-xs"></i>
+                </div>
+
+                <div class="w-full h-20 sm:h-24 p-1 my-auto flex items-center justify-center bg-slate-900/90 rounded-xl border border-slate-700/80">
+                  ${cardData.svgImage}
+                </div>
+
+                <div class="text-center pt-1 border-t border-slate-800">
+                  <p class="font-extrabold text-xs sm:text-sm font-tech text-white truncate">
+                    ${cardData.title}
+                  </p>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          cardElem.innerHTML = `
+            <div class="card-inner">
+              <div class="card-back bg-gradient-to-b from-slate-900 via-slate-900 to-cyan-950 border-2 border-cyan-500/60 flex flex-col items-center justify-center p-3 shadow-2xl rounded-2xl glow-neon-cyan">
+                <div class="w-12 h-12 rounded-full bg-slate-950 border-2 border-cyan-400 flex items-center justify-center mb-2 shadow-lg animate-pulse-glow">
+                  <i class="fa-solid fa-microchip text-cyan-400 text-2xl"></i>
+                </div>
+                <span class="text-[10px] font-tech text-cyan-300 tracking-widest uppercase font-bold">FUNCIÓN</span>
+                <span class="text-[9px] font-tech text-fuchsia-400 mt-1 font-extrabold animate-bounce">¡VOLTEAR!</span>
+              </div>
+
+              <div class="card-front bg-slate-950/95 border-2 ${cardData.borderColor} flex flex-col justify-between p-2.5 sm:p-3 rounded-2xl shadow-2xl backdrop-blur-md">
+                <div class="flex justify-between items-center w-full">
+                  <span class="text-[8px] sm:text-[9px] font-tech font-extrabold uppercase px-2 py-0.5 rounded-full border ${cardData.badgeColor}">
+                    DESCRIPCIÓN
+                  </span>
+                  <i class="fa-solid fa-bolt text-cyan-400 text-xs"></i>
+                </div>
+
+                <div class="my-auto text-center px-1 flex flex-col items-center justify-center">
+                  <div class="w-10 h-10 mb-1">
+                    ${cardData.svgImage}
+                  </div>
+                  <p class="text-[11px] sm:text-xs font-semibold text-slate-100 leading-tight">
+                    ${cardData.title}
+                  </p>
+                </div>
+
+                <div class="w-full text-right pt-1 border-t border-slate-800">
+                  <span class="text-[9px] font-tech text-cyan-400 uppercase font-extrabold">
+                    PAREJA MEMORIA
+                  </span>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        cardElem.addEventListener('click', () => handleCardClick(cardElem));
+        board.appendChild(cardElem);
+      });
+    }
+
+    function handleCardClick(cardElem) {
+      if (isLockBoard) return;
+      if (cardElem.classList.contains('flipped')) return;
+      if (cardElem.classList.contains('matched')) return;
+
+      cardElem.classList.add('flipped');
+      playSound('flip');
+      flippedCards.push(cardElem);
+
+      if (flippedCards.length === 2) {
+        checkMatch();
+      }
+    }
+
+    function checkMatch() {
+      isLockBoard = true;
+      const [card1, card2] = flippedCards;
+      const isMatch = card1.dataset.pairId === card2.dataset.pairId;
+
+      if (isMatch) {
+        setTimeout(() => {
+          playSound('match');
+          card1.classList.add('matched');
+          card2.classList.add('matched');
+
+          const inner1 = card1.querySelector('.card-front');
+          const inner2 = card2.querySelector('.card-front');
+          inner1.classList.add('border-emerald-400', 'bg-emerald-950/60', 'glow-neon-gold');
+          inner2.classList.add('border-emerald-400', 'bg-emerald-950/60', 'glow-neon-gold');
+
+          score += 100;
+          matchedPairs++;
+
+          updateUI();
+          resetFlipped();
+
+          // Al acertar una pareja se muestra inmediatamente la pantalla gigante You Win!
+          setTimeout(() => showEndGame(true), 400);
+        }, 400);
+
+      } else {
+        setTimeout(() => {
+          playSound('error');
+          lives--;
+          updateUI();
+
+          card1.classList.add('glow-red');
+          card2.classList.add('glow-red');
+
+          setTimeout(() => {
+            card1.classList.remove('flipped', 'glow-red');
+            card2.classList.remove('flipped', 'glow-red');
+            resetFlipped();
+
+            if (lives <= 0) {
+              showEndGame(false);
+            }
+          }, 700);
+
+        }, 400);
+      }
+    }
+
+    function resetFlipped() {
+      flippedCards = [];
+      isLockBoard = false;
+    }
+
+    function updateUI() {
+      document.getElementById('score-display').innerText = score;
+      document.getElementById('pairs-display').innerText = `${matchedPairs} / 5`;
+
+      const heartsContainer = document.getElementById('hearts-container');
+      heartsContainer.innerHTML = '';
+
+      for (let i = 0; i < 3; i++) {
+        if (i < lives) {
+          heartsContainer.innerHTML += '<i class="fa-solid fa-heart animate-heart text-rose-500"></i>';
+        } else {
+          heartsContainer.innerHTML += '<i class="fa-regular fa-heart text-slate-700"></i>';
+        }
+      }
+    }
+
+    function showEndGame(isWin) {
+      document.getElementById('screen-game').classList.add('hidden');
+      document.getElementById('screen-game').classList.remove('flex');
+
+      const endScreen = document.getElementById('screen-end');
+      const endTitle = document.getElementById('end-title');
+      const endIcon = document.getElementById('end-icon');
+      const endMessage = document.getElementById('end-message');
+      document.getElementById('final-score').innerText = score;
+
+      endScreen.classList.remove('hidden');
+      endScreen.classList.add('flex');
+
+      if (isWin) {
+        playSound('win');
+        startConfetti();
+        endScreen.className = endScreen.className.replace(/border-\S+/g, '') + ' border-emerald-500/80 glow-neon-gold';
+        endTitle.innerText = "YOU WIN!";
+        endTitle.className = "text-5xl sm:text-7xl font-black font-tech mb-2 tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-amber-300 to-pink-500 animate-pulse";
+        endIcon.innerHTML = '<i class="fa-solid fa-trophy text-amber-400 text-7xl animate-bounce"></i>';
+
+        if (matchedPairs === 5) {
+          endMessage.innerText = "¡Increíble! Has encontrado todas las 5 parejas del elevador de polea automatizado.";
+        } else {
+          endMessage.innerText = `¡Excelente acierto! Has encontrado una pareja (${matchedPairs}/5).`;
+        }
+      } else {
+        playSound('lose');
+        stopConfetti();
+        endScreen.className = endScreen.className.replace(/border-\S+/g, '') + ' border-rose-500/80 glow-red';
+        endTitle.innerText = "Game Over";
+        endTitle.className = "text-5xl sm:text-7xl font-black font-tech mb-2 tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-rose-500 via-red-400 to-amber-500";
+        endIcon.innerHTML = '<i class="fa-solid fa-heart-crack text-rose-500 text-7xl"></i>';
+        endMessage.innerText = "Te has quedado sin vidas. Revisa con cuidado las tarjetas y vuelve a intentarlo.";
+      }
+    }
+
+    /* Animación de Confeti para la Pantalla de Victoria */
+    let confettiParticles = [];
+    let confettiAnimationId = null;
+
+    function startConfetti() {
+      const canvas = document.getElementById('confetti-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      canvas.classList.remove('hidden');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const colors = ['#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#a855f7', '#f43f5e', '#3b82f6'];
+      confettiParticles = [];
+
+      for (let i = 0; i < 150; i++) {
+        confettiParticles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          size: Math.random() * 10 + 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 4,
+          vy: Math.random() * 5 + 2,
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 8
+        });
+      }
+
+      function renderConfetti() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        confettiParticles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rotation += p.rotSpeed;
+          if (p.y > canvas.height) {
+            p.y = -20;
+            p.x = Math.random() * canvas.width;
+          }
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rotation * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          ctx.restore();
+        });
+        confettiAnimationId = requestAnimationFrame(renderConfetti);
+      }
+
+      if (confettiAnimationId) cancelAnimationFrame(confettiAnimationId);
+      renderConfetti();
+    }
+
+    function stopConfetti() {
+      const canvas = document.getElementById('confetti-canvas');
+      if (canvas) canvas.classList.add('hidden');
+      if (confettiAnimationId) {
+        cancelAnimationFrame(confettiAnimationId);
+        confettiAnimationId = null;
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      const canvas = document.getElementById('confetti-canvas');
+      if (canvas && !canvas.classList.contains('hidden')) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+    });
+
+    // Cargar pantalla de inicio al abrir la aplicación
+    window.onload = function() {
+      showStartScreen();
+    };
+  </script>
+</body>
+</html>
